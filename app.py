@@ -33,7 +33,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 st.set_page_config(page_title="Essence Flow", page_icon="🌸", layout="wide", initial_sidebar_state="auto")
 st.set_option('client.toolbarMode', 'minimal')
 
-# ─── VIEWPORT META TAG (for proper mobile scaling) ───
+# ─── VIEWPORT META TAG ───
 st.markdown("""
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -1259,11 +1259,17 @@ st.markdown("""
         padding-left: 8px;
     }
 
+    /* ─── TEST: turn all column containers red ─── */
+    .stColumns, .row-widget.stColumns, [data-testid="column"] {
+        background: red !important;
+    }
+
     /* ─── FORCE HORIZONTAL LAYOUT ON MOBILE (including portrait) ─── */
     @media (max-width: 768px) {
         /* Force all column containers to be flex row, never wrap */
         .stColumns,
-        .row-widget.stColumns {
+        .row-widget.stColumns,
+        [data-testid="column"] {
             display: flex !important;
             flex-direction: row !important;
             flex-wrap: nowrap !important;
@@ -1271,7 +1277,8 @@ st.markdown("""
             -webkit-overflow-scrolling: touch !important;
         }
         .stColumns > div,
-        .row-widget.stColumns > div {
+        .row-widget.stColumns > div,
+        [data-testid="column"] > div {
             flex: 1 1 0 !important;
             min-width: 0 !important;
             max-width: 100% !important;
@@ -4427,7 +4434,7 @@ def main():
     (function() {
         function forceHorizontal() {
             // Force all column containers to be flex row, never wrap
-            const columns = document.querySelectorAll('.stColumns, .row-widget.stColumns');
+            const columns = document.querySelectorAll('.stColumns, .row-widget.stColumns, [data-testid="column"]');
             columns.forEach(col => {
                 col.style.display = 'flex';
                 col.style.flexDirection = 'row';
@@ -4436,7 +4443,7 @@ def main():
                 col.style.webkitOverflowScrolling = 'touch';
             });
             // Force each column child to be flexible
-            const colDivs = document.querySelectorAll('.stColumns > div, .row-widget.stColumns > div');
+            const colDivs = document.querySelectorAll('.stColumns > div, .row-widget.stColumns > div, [data-testid="column"] > div');
             colDivs.forEach(div => {
                 div.style.flex = '1 1 0';
                 div.style.minWidth = '0';
@@ -4465,8 +4472,12 @@ def main():
         // Run on load and after each Streamlit update
         window.addEventListener('load', forceHorizontal);
         window.addEventListener('streamlit:rendered', forceHorizontal);
-        // Also run immediately
+        // Also use MutationObserver to catch dynamic changes
+        const observer = new MutationObserver(forceHorizontal);
+        observer.observe(document.body, { childList: true, subtree: true });
+        // Run immediately and every 500ms as a fallback
         setTimeout(forceHorizontal, 100);
+        setInterval(forceHorizontal, 500);
     })();
     </script>
     """, unsafe_allow_html=True)
